@@ -1,0 +1,123 @@
+﻿@page "/add-product"
+@implements IDisposable
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="MyProduct" Enhance OnValidSubmit="HandleSaveProduct">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="card">
+                    <div class="card-header">Add Product</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label"> Name</label>
+                            <InputText @bind-Value="MyProduct.Name" class="form-control"></InputText>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"> Select Category</label>
+                            @if(_CategoryService.AllCategories is not null)
+                            {
+                                    <option selected></option>
+                    <InputSelect class="form-select form-control-sm" @bind-Value="MyProduct.CategoryId">
+                                    @if (_CategoryService.AllCategories is not null)
+                                    {
+                                        foreach (var category in _CategoryService.AllCategories)
+                                        {
+                                <option value="@category.Id">@category.Name</option>
+                                        }
+                                    }
+                    </InputSelect>
+
+                            }
+                        </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label"> Price</label>
+                            <InputNumber @bind-Value="MyProduct.Price" class="form-control"></InputNumber>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label"> Quantity</label>
+                            <InputNumber @bind-Value="MyProduct.Quantity" class="form-control"></InputNumber>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label"> Description</label>
+                            <InputTextArea @bind-Value="MyProduct.Description" class="form-control"></InputTextArea>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label @(ImageUploadMessage == ""?"":"text-danger")">
+                                @(ImageUploadMessage == "" ? "Upload Image" : ImageUploadMessage)
+                            </label>
+                            <InputFile class="form-control" OnChange="UploadImage"></InputFile>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="form-group mt-3">
+                            @if (_MessageDialogService.ShowSaveButton)
+                            {
+                                <button type="submit" class="btn btn-outline-primary"> <i class="fa fa-plus"></i> Save Product</button>
+                            }
+                            <BusyButtonComponent ShowBusyButton="  _MessageDialogService.ShowBusyButton"></BusyButtonComponent>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+<MessageDialog @ref="_MessageDialogService.messageDialog"></MessageDialog>
+
+@code {
+    Product MyProduct = new();
+    string ImageUploadMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await _CategoryService.GetAllCategories();
+        _CategoryService.CategoryAction += StateHasChanged;
+        _MessageDialogService.Action += StateHasChanged;
+    }
+    async Task HandleSaveProduct()
+    {
+        _MessageDialogService.ShowSaveButton = false;
+        _MessageDialogService.ShowBusyButton = !_MessageDialogService.ShowSaveButton;
+        if (string.IsNullOrEmpty(MyProduct.Base64Img))
+        {
+           _MessageDialogService.messageDialog!.SetDialogValues("warning", "You need to choose image");
+            _MessageDialogService.SetMessageDialog();
+            return;
+        }
+
+        var (flag, message) = await _ProductService.AddProduct(MyProduct);
+        if (flag)
+            _MessageDialogService.messageDialog!.SetDialogValues("success", message);
+        else
+            _MessageDialogService.messageDialog!.SetDialogValues("danger", message);
+
+        _MessageDialogService.SetMessageDialog();
+        return;
+    }
+
+    async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        if (e.File.Name.ToLower().Contains(".png"))
+        {
+            var format = "image/png";
+            var resizeImage = await e.File.RequestImageFileAsync(format, 300, 300);
+            var buffer = new byte[resizeImage.Size];
+            await resizeImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            ImageUploadMessage = "";
+            MyProduct.Base64Img = imageData;
+            imageData = "";
+            return;
+        }
+        ImageUploadMessage = "PNG file needed.";
+        return;
+    }
+
+
+    public void Dispose()
+    {
+       _CategoryService.CategoryAction -= StateHasChanged;
+        _MessageDialogService.Action -= StateHasChanged;
+    }
+}

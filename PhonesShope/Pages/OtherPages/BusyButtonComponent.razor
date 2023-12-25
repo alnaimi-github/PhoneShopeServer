@@ -1,0 +1,10 @@
+﻿﻿@if (ShowBusyButton)
+{
+    <button class="btn btn-primary" type="button" disabled>
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Processing, Please Wait...
+    </button>
+}
+@code {
+    [Parameter] public bool ShowBusyButton { get; set; }
+}

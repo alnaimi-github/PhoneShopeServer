@@ -1,0 +1,27 @@
+﻿<dialog id="my-dialog" style="border:5px solid lightBlue;min-width:300px">
+    <div class="card">
+        <div class="card-header">Notification</div>
+        <div class="card-body">
+            <div class="alert alert-@AlertType">@Message</div>
+        </div>
+        <div class="card-footer">
+            <form method="dialog">
+                <button class="btn btn-@AlertType float-end">Okay</button>
+            </form>
+        </div>
+    </div>
+
+</dialog>
+@code {
+    private string AlertType { get; set; } = string.Empty;
+    private string Message { get; set; } = string.Empty;
+    public void SetDialogValues(string alertType, string message)
+    {
+        AlertType = alertType;
+        Message = message;
+        StateHasChanged();
+
+    }
+
+    public async Task ShowMessage() => await js.InvokeVoidAsync("ShowDialog");
+}

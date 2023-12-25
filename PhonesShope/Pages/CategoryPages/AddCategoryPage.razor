@@ -1,0 +1,69 @@
+﻿@page "/add-Category"
+@implements IDisposable
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="CategoryModel" OnValidSubmit="HandleSaveCategory">
+                <DataAnnotationsValidator />
+                <div class="card">
+                    <div class="card-header">Add Category</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <InputText @bind-Value="CategoryModel.Name" class="form-control" />
+                            <ValidationMessage For="@(() => CategoryModel.Name)" />
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="form-group mt-3">
+                            @if (_MessageDialogService.ShowSaveButton)
+                            {
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fa fa-plus"></i> Save Category
+                                </button>
+                            }
+                            <BusyButtonComponent ShowBusyButton="_MessageDialogService.ShowBusyButton" />
+
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<MessageDialog @ref="_MessageDialogService.messageDialog"></MessageDialog>
+
+@code {
+    private Category CategoryModel = new Category();
+
+    protected override void OnInitialized()
+    {
+        _MessageDialogService.Action += StateHasChanged;
+    }
+
+    private async Task HandleSaveCategory()
+    {
+        _MessageDialogService.ShowSaveButton = false;
+        _MessageDialogService.ShowBusyButton = !_MessageDialogService.ShowSaveButton; // تحديث مباشر لحالة الانشغال
+
+        var (flag, message) = await _CategoryService.AddCategory(CategoryModel);
+        if (flag)
+        {
+            _MessageDialogService.messageDialog!.SetDialogValues("success", message);
+        }
+        else
+        {
+            _MessageDialogService.messageDialog!.SetDialogValues("danger", message);
+          
+         
+        }
+        _MessageDialogService.SetMessageDialog(flag);
+    }
+
+    public void Dispose()
+    {
+        _MessageDialogService.Action -= StateHasChanged;
+    }
+}

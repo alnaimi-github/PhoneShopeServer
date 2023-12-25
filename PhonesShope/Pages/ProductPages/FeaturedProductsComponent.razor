@@ -1,0 +1,124 @@
+﻿@page "/FeaturedProductsComponent"
+
+<div class="container-fluid mt-5">
+    <div class="row">
+        <div class="col-md-12 col-sm-12">
+            <hr />
+            <span style="font-family:MyFont">Featured</span>
+            <div class="card border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-evenly align-items-center">
+
+                        <img src="../resources/lessthan.png" width="50" height="50" id="styleCursor" @onclick="PreviousButton" />
+                        @if (FeaturedProducts is null) return;
+                        @foreach (var item in FeaturedProducts)
+                        {
+                            <div class="card">
+                                <div class="card-body">
+                                    @if (item.DateUploaded.AddDays(30) > DateTime.Now)
+                                    {
+                                        <span class="badge bg-primary d-flex  align-items-end float-end" style="width:50px">New</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-none d-flex  align-items-end float-end" style="width:50px; height:20px;"></span>
+                                    }
+                                    <img class="card-img-top childImage" src="@item.Base64Img" width="150" height="200" style="max-width:150px;min-width:150px;" />
+                                    <div id="productCover" class="bg-secondary text-white d-flex justify-content-center text-wrap">@item.Name</div>
+                                </div>
+                            </div>
+                        }
+                        <img src="../resources/greaterthan.png" width="50" height="50" id="styleCursor" @onclick="NextButton" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    #styleCursor {
+        cursor: pointer;
+    }
+
+    #productCover {
+        width: 150px;
+        font-size: 14px;
+        height: 50px;
+        position: absolute;
+        bottom: 10px;
+        border-radius: 10px;
+        padding: 2px;
+        cursor: pointer;
+    }
+
+        #productCover:hover {
+            opacity: 1
+        }
+
+    img {
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .childImage:hover {
+        opacity: 0.5;
+    }
+
+</style>
+
+
+@code {
+    List<Product>? ProductList = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await RetrieveProducts();
+
+    }
+
+    private async Task RetrieveProducts()
+    {
+        ProductList?.Clear();
+        bool featured = true;
+        await _ProductService.GetProducts(featured);
+        var data = _ProductService.FeaturedProducts;
+
+        LoadData();
+    }
+
+    public int PageSize { get; set; } = 8;
+    public int Skip { get; set; } = 0;
+    public int Take { get; set; } = 8;
+
+    List<Product> FeaturedProducts = new();
+
+    void LoadData()
+    {
+        var getData = ProductList!.Skip(Skip).Take(Take).ToList();
+        Skip += PageSize;
+        FeaturedProducts?.Clear();
+        foreach (var i in getData)
+            FeaturedProducts!.Add(i);
+    }
+
+    void PreviousButton()
+    {
+        if (Skip == 8) return;
+        var getNextProducts = ProductList!.Skip(Skip - (PageSize * 2)).Take(Take).ToList();
+        Skip -= PageSize;
+        FeaturedProducts?.Clear();
+        foreach (var i in getNextProducts)
+            FeaturedProducts!.Add(i);
+    }
+
+    void NextButton()
+    {
+        if (Skip > ProductList!.Count()) return;
+        var getNextProducts = ProductList!.Skip(Skip).Take(Take).ToList();
+        Skip += PageSize;
+        FeaturedProducts?.Clear();
+        foreach (var i in getNextProducts)
+            FeaturedProducts!.Add(i);
+    }
+}
